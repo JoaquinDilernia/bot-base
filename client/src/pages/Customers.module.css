@@ -43,6 +43,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  flex: 1;
+  min-height: 0; /* deja que el overflow-y realmente scrollee dentro del panel */
   overflow-y: auto;
 }
 

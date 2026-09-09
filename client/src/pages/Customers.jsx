@@ -4,6 +4,7 @@ import styles from './Customers.module.css';
 
 const CHANNEL_LABEL = { whatsapp: 'WhatsApp', instagram: 'Instagram' };
 const DEFAULT_FORM = { contactName: '', email: '', phone: '', channel: 'whatsapp', tags: [] };
+const PAGE_SIZE = 50;
 
 function formatDate(ts) {
   if (!ts) return '—';
@@ -40,6 +41,7 @@ export default function Customers() {
   const [error, setError] = useState('');
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const fileInputRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -61,6 +63,9 @@ export default function Customers() {
   }, [q, channel, activeTags]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Al cambiar cualquier filtro, volver a la primera "página" del listado.
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [q, channel, activeTags]);
 
   function toggleTagFilter(tag) {
     setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
@@ -153,6 +158,7 @@ export default function Customers() {
   }
 
   const filtered = customers;
+  const shown = filtered.slice(0, visibleCount);
   const anyFilterActive = q.trim() || channel || activeTags.length > 0;
 
   return (
@@ -305,7 +311,11 @@ export default function Customers() {
         )}
 
         {!loading && (
-          <p className={styles.count}>{filtered.length} {filtered.length === 1 ? 'contacto' : 'contactos'}</p>
+          <p className={styles.count}>
+            {filtered.length > shown.length
+              ? `Mostrando ${shown.length} de ${filtered.length} contactos`
+              : `${filtered.length} ${filtered.length === 1 ? 'contacto' : 'contactos'}`}
+          </p>
         )}
 
         {loading ? (
@@ -323,7 +333,7 @@ export default function Customers() {
               <span>Últ. contacto</span>
               <span></span>
             </div>
-            {filtered.map(c => (
+            {shown.map(c => (
               <div key={c.id} className={styles.tableRow}>
                 <div className={styles.custInfo}>
                   <div className={styles.avatar}>{(c.contactName?.[0] ?? '?').toUpperCase()}</div>
@@ -346,6 +356,16 @@ export default function Customers() {
               </div>
             ))}
           </div>
+        )}
+
+        {!loading && filtered.length > shown.length && (
+          <button
+            className={styles.btnSecondary}
+            style={{ alignSelf: 'center' }}
+            onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+          >
+            Mostrar más ({filtered.length - shown.length} restantes)
+          </button>
         )}
       </div>
     </div>
